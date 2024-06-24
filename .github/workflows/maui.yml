@@ -410,7 +410,7 @@ jobs:
       - name: Submit to Apple's notary service
         run: xcrun notarytool
           submit
-          -f ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
+          ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
           --wait
           --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -418,12 +418,12 @@ jobs:
       - name: Staple the ticket to your app
         run: xcrun stapler
           staple
-          -f ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
+          ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
 
       - name: Validate notarization
         run: xcrun stapler
           validate
-          -f ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
+          ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
           
   publish-windows:
     name: Create Windows artifacts
