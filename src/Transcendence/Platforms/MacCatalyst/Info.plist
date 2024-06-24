@@ -44,6 +44,8 @@
 	<string>en</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Transcendence © 2024</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

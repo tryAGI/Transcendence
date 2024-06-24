@@ -16,6 +16,5 @@ ProvisioningBase64=$(base64 < "$ProvisioningProfilePath")
 echo "APPLE_BUILD_PROVISION_PROFILE_BASE64=$ProvisioningBase64"
 echo "APPLE_CODESIGN_KEY=$CertificateName"
 echo "APPLE_CODESIGN_PROVISION=$ProvisioningName" 
-echo "APPLE_CODESIGN_PROVISION WARNING: If you have a space in the provisioning profile name, make sure you revert it back because file names can't have spaces"
 echo "APPLE_KEYCHAIN_PASSWORD=$Password"
 echo "APPLE_P12_PASSWORD=$Password"
