@@ -1,0 +1,395 @@
+name: Build, test and publish MAUI application
+on:
+  workflow_call:
+    inputs:
+      application-name:
+        required: true
+        type: string
+      package-name:
+        required: true
+        type: string
+      path:
+        required: true
+        type: string
+      project-name:
+        required: true
+        type: string
+      environment:
+        required: false
+        type: string
+        default: staging
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.compute_version.outputs.version }}
+    env:
+      TF_BUILD: true
+    steps:
+      - name: Getting code
+        uses: actions/checkout@v4
+
+      - name: Install workloads
+        run: dotnet workload install maui
+
+      - name: Compute version
+        id: compute_version
+        shell: bash
+        run: |
+          if [[ "${{ github.event.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.event.ref }}"
+            VERSION="${VERSION#refs/tags/v}"
+          else
+            VERSION=$(dotnet msbuild ${{ inputs.path }} -getProperty:ApplicationDisplayVersion)
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install Tizen workload
+        run: |
+          Invoke-WebRequest 'https://raw.githubusercontent.com/Samsung/Tizen.NET/main/workload/scripts/workload-install.ps1' -OutFile 'workload-install.ps1'
+          ./workload-install.ps1
+
+      - name: Build using dotnet
+        run: dotnet build
+          --configuration Debug
+          --nologo
+
+      - name: Run tests
+        run: dotnet test
+          --configuration Debug
+          --nologo
+        
+  publish-android:
+    name: Create Android artifacts
+    needs: build-and-test
+    runs-on: windows-latest
+    steps:
+      - name: Getting code
+        uses: actions/checkout@v4
+
+      - name: Install workloads
+        run: dotnet workload install maui-android
+
+      - name: Decode keystore from base64 and save to file
+        env:
+          SIGNING_KEY_STORE_BASE64: ${{ secrets.ANDROID_SIGNING_KEY_STORE_BASE64 }}
+        run: |
+          $bytes = [System.Convert]::FromBase64String($Env:SIGNING_KEY_STORE_BASE64)
+          [System.IO.File]::WriteAllBytes('${{ inputs.path }}/keystore.keystore', $bytes)
+        shell: pwsh
+
+      - name: Publish
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: dotnet publish
+          ${{ inputs.path }}
+          --output publish
+          -p:TargetFrameworks=net8.0-android
+          --framework:net8.0-android
+          --nologo
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}"
+          -p:ApplicationVersion="${{ github.run_number }}"
+          -p:AndroidKeyStore=true
+          -p:AndroidSigningKeyStore=keystore.keystore
+          -p:AndroidSigningKeyAlias=${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          -p:AndroidSigningKeyPass=${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          -p:AndroidSigningStorePass=${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: publish
+  
+  publish-ios:
+    name: Create iOS artifacts
+    needs: build-and-test
+    environment: ${{ inputs.environment }}
+    runs-on: macos-latest
+    steps:
+      - name: Getting code
+        uses: actions/checkout@v4
+          
+      - name: Install workloads
+        run: dotnet workload install maui-ios
+
+      # https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
+      - name: Install the Apple certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          # apply provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+          
+      - name: Publish
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: dotnet publish
+          ${{ inputs.path }}
+          --output publish
+          -p:TargetFrameworks=net8.0-ios
+          --framework:net8.0-ios
+          --nologo
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}"
+          -p:ApplicationVersion="${{ github.run_number }}"
+          -p:ArchiveOnBuild=true
+          -p:CodesignKey="${{ secrets.APPLE_CODESIGN_KEY }}"
+          -p:CodesignProvision="${{ secrets.APPLE_CODESIGN_PROVISION }}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: publish
+
+  publish-ios-to-testflight:
+    name: Publish to TestFlight
+    needs: publish-ios
+    continue-on-error: true
+    runs-on: macos-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios
+
+      - name: Decode base64 private key and save to file
+        env:
+          API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
+        run: |
+          mkdir -p ./private_keys
+          echo -n "$API_KEY_BASE64" | base64 --decode -o "./private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8"
+
+      - name: Validate app
+        run: xcrun altool
+          --validate-app
+          -f ${{ inputs.project-name }}.ipa
+          -t ios
+          --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+
+      - name: Upload to TestFlight
+        run: xcrun altool
+          --upload-app
+          -f ${{ inputs.project-name }}.ipa
+          -t ios
+          --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+  
+  publish-maccatalyst:
+    name: Create MacCatalyst artifacts
+    needs: build-and-test
+    environment: ${{ inputs.environment }}
+    runs-on: macos-latest
+    steps:
+      - name: Getting code
+        uses: actions/checkout@v4
+
+      - name: Install workloads
+        run: dotnet workload install maui-maccatalyst
+
+      - name: Use latest Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+
+      # https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
+      - name: Install the Apple certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.MACCATALYST_BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.provisionprofile
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          # apply provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+
+      - name: Publish
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: dotnet publish
+          ${{ inputs.path }}
+          --output publish
+          -p:TargetFrameworks=net8.0-maccatalyst
+          --framework:net8.0-maccatalyst
+          --nologo
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}"
+          -p:ApplicationVersion="${{ github.run_number }}"
+          -p:ArchiveOnBuild=true
+          -p:CodesignKey="${{ secrets.APPLE_CODESIGN_KEY }}"
+          -p:CodesignProvision="${{ secrets.MACCATALYST_CODESIGN_PROVISION }}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: maccatalyst
+          path: publish
+          
+  publish-windows:
+    name: Create Windows artifacts
+    needs: build-and-test
+    environment: ${{ inputs.environment }}
+    runs-on: windows-latest
+    steps:
+      - name: Getting code
+        uses: actions/checkout@v4
+
+      - name: Install workloads
+        run: dotnet workload install maui-windows
+
+      - name: Publish
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: dotnet publish
+          ${{ inputs.path }}
+          --output publish
+          -p:TargetFrameworks=net8.0-windows10.0.19041.0
+          --framework:net8.0-windows10.0.19041.0
+          --nologo
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}"
+          -p:ApplicationVersion="${{ github.run_number }}"
+          -p:RuntimeIdentifierOverride=win10-x64
+          -p:WindowsPackageType=None
+          -p:WindowsAppSDKSelfContained=true
+          -p:PublishSingleFile=true
+          -p:PublishReadyToRun=true
+          -p:SelfContained=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          #-p:PublishTrimmed=true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: publish
+  
+  publish-maccatalyst-to-testflight:
+    name: Publish to TestFlight
+    needs: [ build-and-test, publish-maccatalyst ]
+    continue-on-error: true
+    runs-on: macos-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: maccatalyst
+
+      - name: Decode base64 private key and save to file
+        env:
+          API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
+        run: |
+          mkdir -p ./private_keys
+          echo -n "$API_KEY_BASE64" | base64 --decode -o "./private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8"
+
+      - name: Validate app
+        run: xcrun altool
+          --validate-app
+          -f ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
+          -t macos
+          --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+
+      - name: Upload to TestFlight
+        run: xcrun altool
+          --upload-app
+          -f ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
+          -t macos
+          --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+  
+  create-github-release:
+    name: Create Github Release
+    needs: [ build-and-test, publish-android, publish-ios, publish-maccatalyst, publish-windows ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Getting code
+        uses: actions/checkout@v4
+        
+      - uses: actions/download-artifact@v4
+        with:
+          name: android
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: maccatalyst
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows
+
+      - name: Create GitHub release
+        if: startsWith(github.event.ref, 'refs/tags/v')
+        run: gh release create
+          v${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}
+          ${{ inputs.package-name }}-Signed.apk
+          ${{ inputs.package-name }}-Signed.aab
+          ${{ inputs.project-name }}.ipa
+          ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
+          ${{ inputs.project-name }}.exe
+          --title "Release V${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
+          --generate-notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub release
+        if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
+        run: gh release create
+          v${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}-prerelease
+          ${{ inputs.package-name }}-Signed.apk
+          ${{ inputs.package-name }}-Signed.aab
+          ${{ inputs.project-name }}.ipa
+          ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
+          ${{ inputs.project-name }}.exe
+          --prerelease
+          --title "Prerelease V${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
+          --generate-notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

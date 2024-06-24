@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34322.80
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution Files", "{733824CF-BA9E-48F4-B206-CB02240F5D17}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{A10E8E22-B939-4359-9183-E7ECF6650B8E}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\app-production.yml = .github\workflows\app-production.yml
+		.github\workflows\app-staging.yml = .github\workflows\app-staging.yml
+		.github\dependabot.yml = .github\dependabot.yml
+		.github\workflows\maui.yml = .github\workflows\maui.yml
+		.github\prepare_apple.sh = .github\prepare_apple.sh
+		.github\prepare_apple_step2.sh = .github\prepare_apple_step2.sh
+		.github\prepare_android.sh = .github\prepare_android.sh
+		.github\prepare_maccatalyst.sh = .github\prepare_maccatalyst.sh
+		.github\prepare_app_store_connect.sh = .github\prepare_app_store_connect.sh
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transcendence", "src\Transcendence\Transcendence.csproj", "{777FE4E8-6C80-4CD0-96C2-BB44E911D787}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{777FE4E8-6C80-4CD0-96C2-BB44E911D787}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{777FE4E8-6C80-4CD0-96C2-BB44E911D787}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{777FE4E8-6C80-4CD0-96C2-BB44E911D787}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{777FE4E8-6C80-4CD0-96C2-BB44E911D787}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A10E8E22-B939-4359-9183-E7ECF6650B8E} = {733824CF-BA9E-48F4-B206-CB02240F5D17}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BAEBF581-A0C0-44A7-90E8-565F6FC9C096}
+	EndGlobalSection
+EndGlobal

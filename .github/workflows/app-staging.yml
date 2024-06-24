@@ -1,0 +1,20 @@
+name: Build, test and publish MAUI application
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - '.github/workflows/**'
+
+jobs:
+  publish-app:
+    name: Build, test and publish MAUI application
+    uses: ./.github/workflows/maui.yml
+    with:
+      application-name: Transcendence
+      environment: staging
+      package-name: com.tryagi.transcendence
+      path: src/Transcendence
+      project-name: Transcendence
+    secrets: inherit
