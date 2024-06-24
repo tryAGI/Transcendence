@@ -28,7 +28,9 @@ public static class MauiProgram
 			});
 
 		builder.Logging
-			.AddSentry()
+			.AddSentry(options => {
+				options.Dsn = "https://8998baa8eb04ad6d835abc7a8f8638c2@o4504701907435520.ingest.us.sentry.io/4507488165167104";
+			})
 #if DEBUG
 			.AddDebug()
 			.AddConsole()
