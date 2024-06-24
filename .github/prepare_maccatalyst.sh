@@ -2,7 +2,7 @@
 
 # Set variables
 ProvisioningName="Transcendence Distribution MacOS"
-ProvisioningFileName=$(echo "$ProvisioningName" | tr ' ' '_')
+ProvisioningFileName=$(echo "$ProvisioningName" | tr -d '-' | tr -d '(' | tr -d ')' | tr ' ' '_')
 ProvisioningProfilePath="$HOME/Downloads/$ProvisioningFileName.provisionprofile"
 
 # Encode the provisioning profile and .p12 file in base64

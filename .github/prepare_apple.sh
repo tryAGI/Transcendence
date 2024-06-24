@@ -2,7 +2,7 @@
 
 # Set variables
 ProvisioningName="Transcendence Distribution"
-ProvisioningFileName=$(echo "$ProvisioningName" | tr ' ' '_')
+ProvisioningFileName=$(echo "$ProvisioningName" | tr -d '-' | tr -d '(' | tr -d ')' | tr ' ' '_')
 CertificateName="Apple Distribution: Konstantin Stukov (K34VT7FG7P)"
 ProvisioningProfilePath="$HOME/Downloads/$ProvisioningFileName.mobileprovision"
 
