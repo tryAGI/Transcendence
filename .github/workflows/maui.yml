@@ -214,7 +214,7 @@ jobs:
 
       # Available Xcode version: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-arm64-Readme.md#xcode
       - name: Use latest Xcode
-        run: xcode-select --switch /Applications/Xcode_16.0.app
+        run: sudo xcode-select --switch /Applications/Xcode_16.0.app
 
       # https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
       - name: Install the Apple certificate and provisioning profile
@@ -324,7 +324,7 @@ jobs:
 
       # Available Xcode version: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-arm64-Readme.md#xcode
       - name: Use latest Xcode
-        run: xcode-select --switch /Applications/Xcode_16.0.app
+        run: sudo xcode-select --switch /Applications/Xcode_16.0.app
 
       # https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
       - name: Install the Apple certificate and provisioning profile
