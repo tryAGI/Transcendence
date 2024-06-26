@@ -416,13 +416,20 @@ jobs:
           OUTPUT=$(xcrun notarytool \
             submit \
             ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg \
-            --wait \
             --key "./private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8" \
             --key-id ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             --issuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }})
           echo "$OUTPUT"
           SUBMISSION_ID=$(echo "$OUTPUT" | grep -oP '(?<=id: )[a-f0-9-]+')
           echo "submission_id=$SUBMISSION_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait notarization
+        run: xcrun notarytool
+          wait
+          ${{ steps.notarize.outputs.submission_id }}
+          --key "./private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8"
+          --key-id ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          --issuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
 
       - name: Show full notarization log
         run: xcrun notarytool
