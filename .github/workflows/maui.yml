@@ -448,6 +448,10 @@ jobs:
     continue-on-error: true
     runs-on: macos-latest
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: maccatalyst-non-appstore
+
       - name: Decode base64 private key and save to file
         env:
           API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
@@ -518,8 +522,44 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-packaged
-          path: .\**\AppPackages\**\*.*
-          
+          path: src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-x64\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_Test
+
+  publish-windows-to-store:
+    name: Create Windows(Packaged) artifacts for Store
+    needs: build-and-test
+    environment: ${{ inputs.environment }}
+    runs-on: windows-latest
+    steps:
+      - name: Getting code
+        uses: actions/checkout@v4
+
+      - name: Install workloads
+        run: dotnet workload install maui-windows
+
+      - name: Replace appxmanifest
+        run: cp
+          src/Transcendence/Platforms/Windows/Package.Store.appxmanifest
+          src/Transcendence/Platforms/Windows/Package.appxmanifest
+
+      - name: Publish
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: dotnet publish
+          ${{ inputs.path }}
+          --output publish
+          -p:TargetFrameworks=net8.0-windows10.0.19041.0
+          --framework:net8.0-windows10.0.19041.0
+          --nologo
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}"
+          -p:ApplicationVersion="${{ github.run_number }}"
+          -p:RuntimeIdentifierOverride=win10-x64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packaged-for-store
+          path: src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-x64\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_Test
+
   publish-windows-unpackaged:
     name: Create Windows(Unpackaged) artifacts
     needs: build-and-test
@@ -597,6 +637,7 @@ jobs:
           ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg
           ${{ inputs.project-name }}.exe
           ${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_x64.msix
+          ${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_x64.cer
           --title "Release V${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
           --generate-notes
         env:
@@ -612,6 +653,7 @@ jobs:
           ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg
           ${{ inputs.project-name }}.exe
           ${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_x64.msix
+          ${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_x64.cer
           --prerelease
           --title "Prerelease V${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
           --generate-notes
