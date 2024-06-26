@@ -1,3 +1,4 @@
+Add-Type -AssemblyName System.Web
 $Password = [System.Web.Security.Membership]::GeneratePassword(32, 8)
 $SelfSignedOutput = New-SelfSignedCertificate `
   -Type Custom `
