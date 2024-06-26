@@ -24,6 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\prepare_maccatalyst_non_app_store_step2.sh = .github\prepare_maccatalyst_non_app_store_step2.sh
 		.github\prepare_maccatalyst_non_app_store_step3.sh = .github\prepare_maccatalyst_non_app_store_step3.sh
 		.github\prepare_maccatalyst_step2.sh = .github\prepare_maccatalyst_step2.sh
+		.github\prepare_windows.ps1 = .github\prepare_windows.ps1
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transcendence", "src\Transcendence\Transcendence.csproj", "{777FE4E8-6C80-4CD0-96C2-BB44E911D787}"
