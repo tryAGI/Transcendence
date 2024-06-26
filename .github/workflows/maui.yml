@@ -468,9 +468,40 @@ jobs:
         run: xcrun stapler
           staple
           ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg
+  
+  publish-windows-packaged:
+    name: Create Windows(Packaged) artifacts
+    needs: build-and-test
+    environment: ${{ inputs.environment }}
+    runs-on: windows-latest
+    steps:
+      - name: Getting code
+        uses: actions/checkout@v4
+
+      - name: Install workloads
+        run: dotnet workload install maui-windows
+
+      - name: Publish
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: dotnet publish
+          ${{ inputs.path }}
+          --output publish
+          -p:TargetFrameworks=net8.0-windows10.0.19041.0
+          --framework:net8.0-windows10.0.19041.0
+          --nologo
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}"
+          -p:ApplicationVersion="${{ github.run_number }}"
+          -p:RuntimeIdentifierOverride=win10-x64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packaged
+          path: publish
           
-  publish-windows:
-    name: Create Windows artifacts
+  publish-windows-unpackaged:
+    name: Create Windows(Unpackaged) artifacts
     needs: build-and-test
     environment: ${{ inputs.environment }}
     runs-on: windows-latest
@@ -505,12 +536,12 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows
+          name: windows-unpackaged
           path: publish
   
   create-github-release:
     name: Create Github Release
-    needs: [ build-and-test, publish-android, publish-ios, publish-maccatalyst-non-appstore, publish-windows ]
+    needs: [ build-and-test, publish-android, publish-ios, publish-maccatalyst-non-appstore, publish-windows-packaged, publish-windows-unpackaged ]
     runs-on: ubuntu-latest
     steps:
       - name: Getting code
@@ -530,7 +561,11 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: windows
+          name: windows-packaged
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-unpackaged
 
       - name: Create GitHub release
         if: startsWith(github.event.ref, 'refs/tags/v')
