@@ -420,7 +420,7 @@ jobs:
             --key-id ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             --issuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }})
           echo "$OUTPUT"
-          SUBMISSION_ID=$(echo "$OUTPUT" | grep -oP '(?<=id: )[a-f0-9-]+')
+          SUBMISSION_ID=$(echo "$OUTPUT" | awk '/id: /{print $2; exit}')
           echo "submission_id=$SUBMISSION_ID" >> $GITHUB_OUTPUT
 
       - name: Wait notarization
