@@ -494,7 +494,7 @@ jobs:
           certutil -decode cert.pfx.asc cert.pfx
 
       - name: Add Cert to Store
-        run: certutil -user -q -p ${{ secrets.WINDOWS_PFX_PASSWORD }} -importpfx cert.pfx NoRoot
+        run: certutil -user -q -p "${{ secrets.WINDOWS_PFX_PASSWORD }}" -importpfx cert.pfx NoRoot
 
       - name: Publish
         env:
@@ -508,7 +508,6 @@ jobs:
           -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}"
           -p:ApplicationVersion="${{ github.run_number }}"
           -p:RuntimeIdentifierOverride=win10-x64
-          -p:GenerateAppxPackageOnBuild=true
           -p:AppxPackageSigningEnabled=true
           -p:PackageCertificateThumbprint="${{ secrets.WINDOWS_PFX_THUMBPRINT }}"
       
@@ -516,7 +515,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-packaged
-          path: publish
+          path: .\**\AppPackages\**\*.*
           
   publish-windows-unpackaged:
     name: Create Windows(Unpackaged) artifacts
@@ -594,6 +593,7 @@ jobs:
           ${{ inputs.project-name }}.ipa
           ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg
           ${{ inputs.project-name }}.exe
+          ${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_x64.msix
           --title "Release V${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
           --generate-notes
         env:
@@ -608,6 +608,7 @@ jobs:
           ${{ inputs.project-name }}.ipa
           ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg
           ${{ inputs.project-name }}.exe
+          ${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_x64.msix
           --prerelease
           --title "Prerelease V${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
           --generate-notes
