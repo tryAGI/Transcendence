@@ -382,7 +382,6 @@ jobs:
           -p:CodesignProvision="${{ secrets.MACCATALYST_NON_APP_STORE_CODESIGN_PROVISION }}"
           -p:PackageSigningKey="${{ secrets.MACCATALYST_NON_APP_STORE_PACKAGE_SIGNING_KEY }}"
        
-      # Rename the package to include the version number 
       - name: Rename .pkg file
         run: mv
           publish/${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.pkg
@@ -412,10 +411,23 @@ jobs:
           echo -n "$API_KEY_BASE64" | base64 --decode -o "./private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8"
           
       - name: Submit to Apple's notary service
+        id: notarize
+        run: |
+          OUTPUT=$(xcrun notarytool \
+            submit \
+            ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg \
+            --wait \
+            --key "./private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8" \
+            --key-id ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
+            --issuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }})
+          echo "$OUTPUT"
+          SUBMISSION_ID=$(echo "$OUTPUT" | grep -oP '(?<=id: )[a-f0-9-]+')
+          echo "submission_id=$SUBMISSION_ID" >> $GITHUB_OUTPUT
+
+      - name: Show full notarization log
         run: xcrun notarytool
-          submit
-          ${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg
-          --wait
+          log
+          ${{ steps.notarize.outputs.submission_id }}
           --key "./private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8"
           --key-id ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           --issuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
