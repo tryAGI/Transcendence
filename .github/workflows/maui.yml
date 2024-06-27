@@ -550,15 +550,15 @@ jobs:
           -p:TargetFrameworks=net8.0-windows10.0.19041.0
           --framework:net8.0-windows10.0.19041.0
           --nologo
-          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}"
-          -p:ApplicationVersion="${{ github.run_number }}"
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
+          -p:ApplicationVersion="0" # Package acceptance validation error: Apps are not allowed to have a Version with a revision number other than zero specified in the app manifest.
           -p:RuntimeIdentifierOverride=win10-x64
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-packaged-for-store
-          path: src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-x64\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_Test
+          path: src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-x64\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.0_Test
 
   publish-windows-unpackaged:
     name: Create Windows(Unpackaged) artifacts
