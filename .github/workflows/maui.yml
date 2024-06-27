@@ -551,7 +551,7 @@ jobs:
           --framework:net8.0-windows10.0.19041.0
           --nologo
           -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
-          -p:ApplicationVersion="0" # Package acceptance validation error: Apps are not allowed to have a Version with a revision number other than zero specified in the app manifest.
+          -p:ApplicationVersion="0"
           -p:RuntimeIdentifierOverride=win10-x64
 
       - name: Upload artifacts
