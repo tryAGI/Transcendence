@@ -541,7 +541,7 @@ jobs:
           src/Transcendence/Platforms/Windows/Package.Store.appxmanifest
           src/Transcendence/Platforms/Windows/Package.appxmanifest
 
-      - name: Publish
+      - name: Publish x64
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: dotnet publish
@@ -554,11 +554,40 @@ jobs:
           -p:ApplicationVersion="0"
           -p:RuntimeIdentifierOverride=win10-x64
 
+      - name: Publish x86
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: dotnet publish
+          ${{ inputs.path }}
+          --output publish
+          -p:TargetFrameworks=net8.0-windows10.0.19041.0
+          --framework:net8.0-windows10.0.19041.0
+          --nologo
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
+          -p:ApplicationVersion="0"
+          -p:RuntimeIdentifierOverride=win10-x86
+
+      - name: Publish arm64
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: dotnet publish
+          ${{ inputs.path }}
+          --output publish
+          -p:TargetFrameworks=net8.0-windows10.0.19041.0
+          --framework:net8.0-windows10.0.19041.0
+          --nologo
+          -p:ApplicationDisplayVersion="${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}"
+          -p:ApplicationVersion="0"
+          -p:RuntimeIdentifierOverride=win10-arm64
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-packaged-for-store
-          path: src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-x64\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.0_Test
+          path: |
+            src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-x64\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.0_Test
+            src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-x86\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.0_Test
+            src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-arm64\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.0_Test
 
   publish-windows-unpackaged:
     name: Create Windows(Unpackaged) artifacts
