@@ -11,7 +11,7 @@
   <mp:PhoneIdentity PhoneProductId="7AFDCB47-5B0B-483D-B433-152B0119FB27" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>$placeholder$</DisplayName>
+    <DisplayName>TranscendenceApp</DisplayName>
     <PublisherDisplayName>Konstantin Stukov</PublisherDisplayName>
     <Logo>$placeholder$.png</Logo>
   </Properties>
