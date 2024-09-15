@@ -538,8 +538,8 @@ jobs:
 
       - name: Replace appxmanifest
         run: cp
-          src/Transcendence/Platforms/Windows/Package.Store.appxmanifest
-          src/Transcendence/Platforms/Windows/Package.appxmanifest
+          src/${{ inputs.project-name }}/Platforms/Windows/Package.Store.appxmanifest
+          src/${{ inputs.project-name }}/Platforms/Windows/Package.appxmanifest
 
       - name: Publish x64
         env:
