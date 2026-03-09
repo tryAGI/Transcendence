@@ -4,8 +4,9 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
-      - '.github/workflows/**'
+      - 'src/Transcendence/**'
+      - '.github/workflows/maui.yml'
+      - '.github/workflows/app-staging.yml'
 
 jobs:
   publish-app:

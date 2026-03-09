@@ -1,0 +1,26 @@
+<Solution>
+  <Folder Name="/Solution Files/">
+    <File Path=".gitignore" />
+    <File Path="privacy-policy.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Files/workflows/">
+    <File Path=".github/dependabot.yml" />
+    <File Path=".github/prepare_android.sh" />
+    <File Path=".github/prepare_apple.sh" />
+    <File Path=".github/prepare_apple_step2.sh" />
+    <File Path=".github/prepare_app_store_connect.sh" />
+    <File Path=".github/prepare_maccatalyst.sh" />
+    <File Path=".github/prepare_maccatalyst_non_app_store.sh" />
+    <File Path=".github/prepare_maccatalyst_non_app_store_step2.sh" />
+    <File Path=".github/prepare_maccatalyst_non_app_store_step3.sh" />
+    <File Path=".github/prepare_maccatalyst_step2.sh" />
+    <File Path=".github/prepare_windows.ps1" />
+    <File Path=".github/workflows/app-production.yml" />
+    <File Path=".github/workflows/app-staging.yml" />
+    <File Path=".github/workflows/cli-staging.yml" />
+    <File Path=".github/workflows/maui.yml" />
+  </Folder>
+  <Project Path="src/Transcendence.CLI/Transcendence.CLI.csproj" />
+  <Project Path="src/Transcendence/Transcendence.csproj" />
+</Solution>
