@@ -10,7 +10,7 @@ Transcendence is a .NET MAUI cross-platform application with an accompanying CLI
 
 ```bash
 # Build entire solution
-dotnet build Transcendence.sln
+dotnet build Transcendence.slnx
 
 # Build MAUI app (Mac Catalyst, on macOS)
 dotnet build src/Transcendence/Transcendence.csproj
@@ -30,7 +30,7 @@ Note: MAUI builds require platform-specific workloads. On macOS, only the `net8.
 
 ```
 Transcendence/
-├── Transcendence.sln
+├── Transcendence.slnx
 ├── privacy-policy.md              # App privacy policy
 ├── settings.xamlstyler             # XAML formatting settings
 ├── src/
