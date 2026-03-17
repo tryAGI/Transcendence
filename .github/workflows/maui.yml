@@ -29,7 +29,7 @@ jobs:
       TF_BUILD: true
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install workloads
         run: dotnet workload install maui
@@ -67,7 +67,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install workloads
         run: dotnet workload install maui-android
@@ -98,7 +98,7 @@ jobs:
           -p:AndroidSigningStorePass=${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android
           path: publish
@@ -110,7 +110,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
           
       - name: Install workloads
         run: dotnet workload install maui-ios
@@ -162,7 +162,7 @@ jobs:
           -p:CodesignProvision="${{ secrets.APPLE_CODESIGN_PROVISION }}"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios
           path: publish
@@ -173,7 +173,7 @@ jobs:
     continue-on-error: true
     runs-on: macos-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: ios
 
@@ -207,7 +207,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install workloads
         run: dotnet workload install maui-maccatalyst
@@ -272,7 +272,7 @@ jobs:
           -p:PackageSigningKey="${{ secrets.MACCATALYST_PACKAGE_SIGNING_KEY }}"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: maccatalyst
           path: publish
@@ -283,7 +283,7 @@ jobs:
     continue-on-error: true
     runs-on: macos-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: maccatalyst
 
@@ -317,7 +317,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install workloads
         run: dotnet workload install maui-maccatalyst
@@ -388,7 +388,7 @@ jobs:
           publish/${{ inputs.project-name }}-${{ needs.build-and-test.outputs.version }}.${{ github.run_number }}.pkg
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: maccatalyst-non-appstore
           path: publish
@@ -401,7 +401,7 @@ jobs:
     continue-on-error: true
     runs-on: macos-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: maccatalyst-non-appstore
 
@@ -448,7 +448,7 @@ jobs:
     continue-on-error: true
     runs-on: macos-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: maccatalyst-non-appstore
 
@@ -487,7 +487,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install workloads
         run: dotnet workload install maui-windows
@@ -519,7 +519,7 @@ jobs:
           -p:PackageCertificateThumbprint="${{ secrets.WINDOWS_PFX_THUMBPRINT }}"
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-packaged
           path: src\${{ inputs.project-name }}\bin\Release\net8.0-windows10.0.19041.0\win10-x64\AppPackages\${{ inputs.project-name }}_${{ needs.build-and-test.outputs.version }}.0.${{ github.run_number }}_Test
@@ -531,7 +531,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install workloads
         run: dotnet workload install maui-windows
@@ -581,7 +581,7 @@ jobs:
           -p:RuntimeIdentifierOverride=win10-arm64
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-packaged-for-store
           path: |
@@ -596,7 +596,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install workloads
         run: dotnet workload install maui-windows
@@ -623,7 +623,7 @@ jobs:
           #-p:PublishTrimmed=true
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-unpackaged
           path: publish
@@ -634,25 +634,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Getting code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: android
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: ios
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: maccatalyst-non-appstore
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows-packaged
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows-unpackaged
 
