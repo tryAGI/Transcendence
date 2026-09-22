@@ -9,6 +9,16 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "System.CommandLine"
+        versions:
+          - "2.0.12"
+      - dependency-name: "Microsoft.Maui.Controls"
+        versions:
+          - "10.0.101"
+      - dependency-name: "Microsoft.Maui.Controls.Compatibility"
+        versions:
+          - "10.0.101"
     groups:
       all:
         patterns:
