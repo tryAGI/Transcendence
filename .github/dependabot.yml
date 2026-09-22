@@ -14,11 +14,7 @@ updates:
         versions:
           - "2.0.12"
       - dependency-name: "Microsoft.Maui.Controls"
-        versions:
-          - "10.0.101"
       - dependency-name: "Microsoft.Maui.Controls.Compatibility"
-        versions:
-          - "10.0.101"
     groups:
       all:
         patterns:
